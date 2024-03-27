@@ -1,0 +1,260 @@
+import {launchCamera} from 'react-native-image-picker';
+
+export const openCamera = async (
+  setImage,
+  setMessage,
+  setImageHandler,
+  setError,
+) => {
+  try {
+    let result = await launchCamera({mediaType: 'photo'});
+
+    if (result.didCancel) {
+      console.log('User cancelled camera');
+      setMessage('Operation Cancelled');
+    } else if (result.error) {
+      console.error('Camera Error:', result.error);
+      setMessage('Error while Opening Camera.Please try again.');
+      setImageHandler();
+    } else {
+      setImage(result?.assets[0]?.uri);
+      console.log(result?.assets[0]?.uri);
+    }
+
+    // Handle the result if needed
+  } catch (error) {
+    console.error('Error opening camera:', error);
+    setMessage('Error while opening camera.Grand your Camera Permission.');
+    setError(true);
+    setImageHandler();
+  }
+};
+
+export const findAge = (
+  text,
+  setAge,
+  aadhaarNumber,
+  setIsFrontUploaded,
+  setImage,
+  setMessage,
+  setImageHandler,
+  setError,
+  isPanCardActive,
+) => {
+  const dobRegex = /DOB: (\d{2}\/\d{2}\/\d{4})/;
+
+  const dobMatch = text?.match(dobRegex);
+  if (dobMatch) {
+    // Split the date string into day, month, and year components
+    const dobParts = dobMatch[1].split('/');
+
+    const day = parseInt(dobParts[0].trim(), 10); // Convert to integer
+    const month = parseInt(dobParts[1].trim(), 10); // Convert to integer
+    const year = parseInt(dobParts[2].trim(), 10); // Convert to integer
+
+    // Create a new date object
+    const dobDate = new Date(year, month - 1, day); // Months are zero-based (0-11)
+
+    // Check if dobDate is a valid date
+    if (isNaN(dobDate.getTime())) {
+      console.log('Invalid date string:', dobMatch[1]);
+      setMessage(
+        'Unable to recognize the text on your Aadhaar card. Please try again.',
+      );
+      setError(true);
+      return; // Exit function if DOB is not a valid date
+    }
+
+    // Continue with calculating age
+    const today = new Date();
+    const diffTime = Math.abs(today - dobDate);
+    const age = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365.25));
+    setAge(age);
+
+    console.log('Your age is:', age);
+    validateFront_Aadhar_Handler(
+      age,
+      aadhaarNumber,
+      setIsFrontUploaded,
+      setImage,
+      setMessage,
+      setImageHandler,
+      setError,
+    );
+  } else {
+    console.log('Date of Birth not found');
+    setMessage(
+      'Oops! Could not extract Aadhaar card info. Please ensure a clear photo and try again.',
+    );
+    setError(true);
+    // setImage('');
+    return; // Exit function if DOB is not found
+  }
+};
+export const extractAadhaarDetails = async (
+  text,
+  setIsFrontUploaded,
+  frontadhar,
+  setFrontAadhar,
+  setAge,
+  age,
+  setImage,
+  setMessage,
+  setImageHandler,
+  setError,
+) => {
+  try {
+    const aadhaarRegex = /\b\d{4}\s\d{4}\s\d{4}\b/g;
+    const issueDateRegex = /Issue Date: (\d{2}\/\d{2}\/\d{4})/;
+    const dobRegex = /DOB: (\d{2}\/\d{2}\/\d{4})/;
+
+    // Extract Aadhaar number, issue date, and date of birth using regex
+    const aadhaarNumber = (await text?.match(aadhaarRegex)?.[0]) ?? '';
+    const issueDate = text?.match(issueDateRegex)?.[1] ?? '';
+    const dob = text?.match(dobRegex)?.[1] ?? '';
+    console.log('aadhar', aadhaarNumber, 'issueDate', issueDate, 'dob:', dob);
+    setFrontAadhar(aadhaarNumber);
+
+    findAge(
+      text,
+      setAge,
+      aadhaarNumber,
+      setIsFrontUploaded,
+      setImage,
+      setMessage,
+      setImageHandler,
+      setError,
+    );
+
+    return {aadhaarNumber, issueDate, dob};
+  } catch (error) {
+    console.log(error);
+    setMessage('Unable to Extract your Details, Try after Some Time');
+    setError(true);
+    setImageHandler();
+  }
+};
+
+const validateFront_Aadhar_Handler = (
+  age,
+  aadhaarNumber,
+  setIsFrontUploaded,
+  setImage,
+  setMessage,
+  setImageHandler,
+  setError,
+) => {
+  if (aadhaarNumber.replace(/\s/g, '').length === 12 && age > 21) {
+    setIsFrontUploaded(true);
+    setMessage('Successfully uploaded');
+    setError(false);
+    setImageHandler();
+    // clearMessageHandler();
+  } else if (aadhaarNumber.replace(/\s/g, '').length === 12 && age < 21) {
+    setMessage(
+      'As per Govt Records you are not Eligible for Signin this Application',
+      setError(true),
+    );
+    setImageHandler();
+  } else if (aadhaarNumber.replace(/\s/g, '').length != 12 && age > 21) {
+    setMessage('AdhaarCard validation Failed, Please Try Again');
+    setError(true);
+    setImageHandler();
+  } else {
+    setMessage('Unable to read your Aadhaar Card! Try Again..');
+    setError(true);
+  }
+};
+export const extractAadhaarDetailsBack = async (
+  text,
+  setIsFrontUploaded,
+  frontaadhar,
+  setBackAadhar,
+  setAadhaarAddress,
+  setMessage,
+  setImage,
+  setImageHandler,
+  setError,
+) => {
+  try {
+    const aadhaarRegex = /\b(?<!\d)(?!1947)\d{4}\s\d{4}\s\d{4}\b/;
+    const addressRegex = /Address:([\s\S]*?)(?=\d{4}\s\d{4}\s\d{4}\b|$)/;
+    // const addressRegex = /Address:([\s\S]*?)(?=[A-Z]|Unique)/g;
+    const aadhaarNumber = (await text?.match(aadhaarRegex)?.[0]) ?? '';
+    const addressMatch = addressRegex.exec(text);
+    const address = addressMatch ? addressMatch[1].trim() : '';
+    console.log(
+      'aadhar in console:\n',
+      aadhaarNumber,
+      'address in console:\n',
+      address,
+    );
+
+    {
+      if (address && aadhaarNumber)
+        validateBack_Aadhar_Handler(
+          aadhaarNumber,
+          address,
+          setIsFrontUploaded,
+          frontaadhar,
+          setBackAadhar,
+          setAadhaarAddress,
+          setMessage,
+          setImage,
+          setImageHandler,
+          setError,
+        );
+      else setMessage('unable to validate aadhaar, Try Again..');
+      setError(true);
+    }
+
+    return {aadhaarNumber, address};
+  } catch (error) {
+    console.log(error);
+    setMessage('capture Aadhaar Card Back Side');
+    // setImageHandler();
+  }
+};
+const validateBack_Aadhar_Handler = (
+  aadhaarNumber,
+  address,
+  setIsFrontUploaded,
+  frontaadhar,
+  setBackAadhar,
+  setAadhaarAddress,
+  setMessage,
+  setImage,
+  setImageHandler,
+  setError,
+) => {
+  if (
+    aadhaarNumber?.replace(/\s/g, '') === frontaadhar?.replace(/\s/g, '') &&
+    address?.length > 15
+  ) {
+    setBackAadhar(aadhaarNumber);
+    setAadhaarAddress(address);
+    setIsFrontUploaded(false);
+    setMessage('Successfully Uploaded Adhaar Card');
+
+    setImageHandler();
+    return;
+  } else if (
+    aadhaarNumber?.replace(/\s/g, '') != frontaadhar?.replace(/\s/g, '') &&
+    address?.length > 15
+  ) {
+    setMessage('Your Aadhaar Card details not matching. Try Again');
+    setError(true);
+    // setImageHandler();
+  } else if (
+    aadhaarNumber?.replace(/\s/g, '') != frontaadhar?.replace(/\s/g, '') &&
+    address?.length < 5
+  ) {
+    setMessage('Unable to read your Address Details');
+    // setImageHandler();
+    setError(true);
+  } else {
+    console.log('Unable to read your Aadhar Card! Try Again..');
+    setError(true);
+    // setImageHandler();
+  }
+};
