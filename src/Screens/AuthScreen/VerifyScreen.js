@@ -8,26 +8,34 @@ import {
   ScrollView,
   KeyboardAvoidingView,
 } from 'react-native';
-import React, {useContext, useState, useRef} from 'react';
+import React, {useContext, useState, useRef, useEffect} from 'react';
 import Header from '../../Components/Header';
-import LoginContext from '../../Contexts/LoginBtnContext';
+
 import smsLogo from '../../../Assets/Images/smartphonebg.png';
 import axios from 'axios';
 import {colors} from '../../Globals/Styles';
 import {useNavigation} from '@react-navigation/native';
-import { API } from '../../utils/apiutils';
-// import OtpAutoFillViewManager from 'react-native-otp-auto-fill';
+import {API} from '../../utils/apiutils';
+import {storeToken} from '../../utils/navigationutils';
+import LoginContext from '../../Contexts/LoginBtnContext';
+import AuthContext from '../../Contexts/NavigationContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { GetUserByMobile } from '../../data';
 
 const VerifyScreen = () => {
   const firstInput = useRef();
   const secondInput = useRef();
   const thirdInput = useRef();
   const fourthInput = useRef();
-  const {mobileNumber} = useContext(LoginContext);
+  const {mobileNumber, loginToken, setLoginToken} = useContext(LoginContext);
   const [error, setError] = useState('');
   const [otps, setOtp] = useState({1: '', 2: '', 3: '', 4: ''});
   const [showResendOTP, setShowResendOTP] = useState(false);
   const Navigation = useNavigation();
+  const [mobileUserData, setMobileUserData] = useState();
+  // const {getUserData} = GetUserByMobile();
+  // console.log('getuserMobile',getUserData)
+  let token = '';
   const otpLength = Object.values(otps).filter(value => value !== '').length;
   const resendOtpTextHandler = () => {
     const timer = setTimeout(() => {
@@ -36,11 +44,10 @@ const VerifyScreen = () => {
 
     return () => clearTimeout(timer);
   };
-  const resenndOtpHanlder = async() => {
-
+  const resenndOtpHanlder = async () => {
     try {
       const otpResponce = await axios.post(API + 'send-otp', {mobileNumber});
-      Navigation.navigate('verifyScreen');
+      Navigation.navigate('signup');
     } catch (error) {
       console.log('error', error);
     }
@@ -50,21 +57,33 @@ const VerifyScreen = () => {
       setError('');
     }, 3000);
   };
-  const siginButtonHandler = async() => {
+  const siginButtonHandler = async () => {
     resendOtpTextHandler();
-   
-   
+
     try {
       const otp = Object.values(otps).join('');
-      const otpResponce = await axios.post(API + 'verify-otp', {otp});
-     
-      Navigation.navigate('signup');
-      setError('Successfully Logged In')
+      const otpResponce = await axios.post(API + 'verify-otp', {
+        otp,
+        mobileNumber,
+      });
+      token = otpResponce.data.accessToken;
+      // console.log('token', mobileUserData);
+      if (!mobileUserData) {
+        Navigation.navigate('signup');
+        console.log('no mobileuserdata');
+      } else {
+        await AsyncStorage.setItem('token', token);
+        // await AsyncStorage.removeItem('token');
+        console.log('usermobileData is availbale');
+        Navigation.navigate('Homes');
+      }
+
+      setError('Successfully Logged In');
     } catch (error) {
       console.log('error', error);
-      setError("Password mismatch")
+      setError('Password mismatch');
     }
-   
+
     setTimeout(() => {
       setError('');
     }, 3000);
@@ -75,6 +94,28 @@ const VerifyScreen = () => {
       setError('');
     }, 3000);
   };
+  console.log('LoginToken', loginToken);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          API + 'get-register-user/' + mobileNumber,
+        );
+        if (response) {
+          setMobileUserData(response.data);
+        } else {
+          setMobileUserData(null);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+      const checkStatus = await axios.get(API + 'get-all-selfie');
+      if (checkStatus.data) {
+        console.log(checkStatus.data);
+      }
+    };
+    fetchData();
+  }, [mobileNumber]);
 
   return (
     <ScrollView style={styles.container}>

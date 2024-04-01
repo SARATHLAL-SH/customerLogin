@@ -20,7 +20,8 @@ import {colors} from '../Globals/Styles';
 import {recognizeText} from '../utils/functionutils/TextReadingUtils';
 import {VerifyPancardHandler} from '../utils/functionutils/PancarduploadUtils';
 import axios from 'axios';
-import { API } from '../utils/apiutils';
+import {API} from '../utils/apiutils';
+import {useNavigation} from '@react-navigation/native';
 
 const ScannerCamera = () => {
   const devices = useCameraDevices();
@@ -32,26 +33,22 @@ const ScannerCamera = () => {
   const [error, setError] = useState();
   const [age, setAge] = useState();
   const [loading, setLoading] = useState(false);
- 
+  const Navigation = useNavigation();
 
   useEffect(() => {
     recognizeText(image, setText, setMessage, setError);
   }, [image]);
-  // handler
+
   useEffect(() => {
     requestCameraPermission();
   }, []);
+
   const requestCameraPermission = async () => {
     const permission = await Camera.requestCameraPermission();
     if (permission === 'denied') await Linking.openSettings();
   };
+
   const takePicture = async () => {
-    // if (camera != null) {
-    //   setLoading(true);
-    //   const photo = await camera.current.takePhoto();
-    //   setImage('file://' + photo.path);
-    //   setLoading(false);
-    // }
     setLoading(true);
     if (camera != null) {
       try {
@@ -59,7 +56,7 @@ const ScannerCamera = () => {
         if (photo) {
           const formData = new FormData();
           formData.append('file', {
-            uri: 'file://' + photo.path, // Corrected URI
+            uri: 'file://' + photo.path,
             type: 'image/jpeg',
             name: 'photo.jpg',
           });
@@ -71,9 +68,9 @@ const ScannerCamera = () => {
               'Content-Type': 'multipart/form-data',
             },
           });
-
-          console.log(response.data);
-          // Handle successful response if needed
+          if (response) {
+          setMessage('photo Captured')
+          }
         } else {
           setMessage('No photo captured');
         }
@@ -100,7 +97,6 @@ const ScannerCamera = () => {
     }
   };
 
- 
   const renderCamera = () => {
     if (!device) {
       return (
@@ -156,20 +152,20 @@ const ScannerCamera = () => {
               </Text>
             </TouchableOpacity>
           )}
-           {loading && (
-          <View
-            style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-            <ActivityIndicator size="large" color={colors.buttons} />
-            <Text>uploading . . . </Text>
-          </View>
-        )}
+          {loading && (
+            <View
+              style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+              <ActivityIndicator size="large" color={colors.buttons} />
+              <Text>uploading . . . </Text>
+            </View>
+          )}
         </View>
         {image && (
           <View>
             <TouchableOpacity
               style={styles.btnContainer}
               onPress={() => {
-                VerifyPancardHandler(text, setMessage, setError, setAge);
+                VerifyPancardHandler(text, setMessage, setError, setAge,Navigation);
               }}>
               <Text style={styles.btnTxt}>Conform</Text>
             </TouchableOpacity>
@@ -201,7 +197,7 @@ const styles = StyleSheet.create({
   captureBtn: {
     backgroundColor: 'green',
     width: '70%',
-    bottom: 50,
+    marginTop: 20,
     alignSelf: 'center',
     paddingVertical: 10,
     borderRadius: 10,

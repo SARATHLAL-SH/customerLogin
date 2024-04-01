@@ -1,16 +1,31 @@
-import { View, Text } from 'react-native'
-import React,{createContext,useState} from 'react'
+import {View, Text} from 'react-native';
+import React, {createContext, useState} from 'react';
 
 const LoginContext = createContext();
 export const LoginBtnContext = ({children}) => {
-    const [mobileNumber, setMobileNumber] = useState('');
-    const [isAdhaar,setIsAdhaar] = useState(false);
-    const [isPanCard,setIsPanCard] = useState(false);
-   
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [isAdhaar, setIsAdhaar] = useState(false);
+  const [isPanCard, setIsPanCard] = useState(false);
+  const [loginToken, setLoginToken] = useState('');
+  const [getUserData, setGetUserData] = useState();
 
   return (
-   <LoginContext.Provider value={{mobileNumber, setMobileNumber,isAdhaar,setIsAdhaar,isPanCard,setIsPanCard}}>{children}</LoginContext.Provider>
-  )
-}
+    <LoginContext.Provider
+      value={{
+        mobileNumber,
+        setMobileNumber,
+        isAdhaar,
+        setIsAdhaar,
+        isPanCard,
+        setIsPanCard,
+        loginToken,
+        setLoginToken,
+        getUserData,
+        setGetUserData,
+      }}>
+      {children}
+    </LoginContext.Provider>
+  );
+};
 
-export default LoginContext
+export default LoginContext;

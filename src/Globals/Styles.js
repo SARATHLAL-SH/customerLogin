@@ -10,6 +10,7 @@ export const colors = {
   error: '#ba071c',
   orange: '#fc4705',
   rose: '#ff6181',
+  homePrimary:'#ed5924'
 };
 
 export const parameters = {

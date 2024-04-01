@@ -27,6 +27,8 @@ import {
 } from 'react-native-vision-camera';
 import {API} from '../../utils/apiutils';
 import axios from 'axios';
+import {useNavigation} from '@react-navigation/native';
+
 
 const DocumentUploader = () => {
   const [image, setImage] = useState('');
@@ -42,10 +44,13 @@ const DocumentUploader = () => {
   const camera = useRef(null);
   const device = getCameraDevice(devices, 'back');
   const [loading, setLoading] = useState(false);
+  const [D_O_Birth, setD_O_Birth] = useState();
+  const Navigation = useNavigation();
 
   useEffect(() => {
     recognizeText(image, setText, setMessage, setError);
   }, [image]);
+
   useEffect(() => {
     requestCameraPermission;
   }, []);
@@ -53,18 +58,21 @@ const DocumentUploader = () => {
     setTimeout(() => {
       setImage('');
       setMessage('');
-    }, 5000);
+    }, 2000);
   };
+
   const requestCameraPermission = async () => {
     const permission = await Camera.requestCameraPermission();
     if (permission === 'denied') await Linking.openSettings();
   };
+
   const resetHandler = () => {
     setError(false);
     // setIsFrontUploaded(false);
     setImage('');
     takePicture();
   };
+
   const takePicture = async () => {
     setLoading(true);
     if (camera != null) {
@@ -113,6 +121,7 @@ const DocumentUploader = () => {
       setMessage('Please wait...');
     }
   };
+
   const renderCamera = () => {
     if (!device) {
       return (
@@ -174,6 +183,9 @@ const DocumentUploader = () => {
                   setImage,
                   setImageHandler,
                   setError,
+                  D_O_Birth,
+                  age,
+                  Navigation
                 )
               : extractAadhaarDetails(
                   text,
@@ -186,9 +198,11 @@ const DocumentUploader = () => {
                   setMessage,
                   setImageHandler,
                   setError,
+                  setD_O_Birth,
+                  D_O_Birth,
                 )
           }>
-          {!isError && image && <Text style={styles.confirmtxt}>Conform</Text>}
+          { image && <Text style={styles.confirmtxt}>Conform</Text>}
         </TouchableOpacity>
 
         {image && (

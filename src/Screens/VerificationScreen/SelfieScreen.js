@@ -5,6 +5,7 @@ import {
   Linking,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
 
@@ -13,13 +14,10 @@ import {
   getCameraDevice,
   useCameraDevices,
 } from 'react-native-vision-camera';
-
-import {colors} from '../Globals/Styles';
-import {
-  useFrameProcessor,
-  FrameProcessorPriority,
-  FaceDetector,
-} from 'vision-camera-face-detector';
+import axios from 'axios';
+import {colors} from '../../Globals/Styles';
+import {API} from '../../utils/apiutils';
+import {useNavigation} from '@react-navigation/native';
 
 const SelfieScreen = () => {
   const devices = useCameraDevices();
@@ -29,45 +27,41 @@ const SelfieScreen = () => {
   const [text, setText] = useState();
   const [message, setMessage] = useState();
   const [faces, setFaces] = useState([]);
-  //   useFrameProcessor(
-  //     async (frame) => {
-  //       if (device && device.position === 'front') {
-  //         try {
-  //           const detectedFaces = await FaceDetector.findFaces(frame, {
-  //             mode: FaceDetector.Mode.Fast, // Adjust mode if needed (Fast, Accurate)
-  //             landmarkMode: FaceDetector.LandmarkMode.None, // Detect landmarks (optional)
-  //             classifications: FaceDetector.Classifications.None, // Detect classifications (optional)
-  //           });
-  //           setFaces(detectedFaces);
-  //         } catch (error) {
-  //           console.error('Error detecting faces:', error);
-  //           // Handle errors (e.g., display error message to user)
-  //         }
-  //       }
-  //     },
-  //     [device],
-  //     FrameProcessorPriority?.FaceDetection
-  //   );
-
-  //   return faces;
-
+  const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
   useEffect(() => {}, [image]);
   // handler
   useEffect(() => {
     requestCameraPermission();
   }, []);
+  const clearMessage = () => {
+    setTimeout(() => {
+      setMessage('');
+    }, 3000);
+  };
+
   const requestCameraPermission = async () => {
     const permission = await Camera.requestCameraPermission();
-    if (permission === 'denied') await Linking.openSettings();
+    if (permission === 'denied') {
+      setMessage(
+        'Camera access denied. Please grant camera access in your device settings.',
+      );
+      clearMessage();
+      await Linking.openSettings();
+    }
   };
   const takePicture = async () => {
     if (camera != null) {
       const photo = await camera.current.takePhoto();
+      // uploadSelfieHandler(photo);
       setImage('file://' + photo.path);
+    } else {
+      setMessage('Image not Available');
+      clearMessage();
     }
   };
 
-  console.log(image);
+  console.log('image path', image);
   const renderCamera = () => {
     if (!device) {
       return (
@@ -77,25 +71,67 @@ const SelfieScreen = () => {
       );
     } else {
       return (
-        <View style={{alignItems: 'center', marginTop: 10}}>
+        <View style={{alignItems: 'center', marginTop: 20}}>
           <Camera
-            style={{width: '65%', height: '250'}}
+            style={{width: '90%', height: 380}}
             device={device}
             isActive={true}
             enableZoomGesture
             ref={camera}
             photo
           />
-          <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
-            <Text style={{fontWeight: 700, fontSize: 20, color: colors.white}}>
-              Take one Selfie
-            </Text>
-          </TouchableOpacity>
         </View>
       );
     }
   };
-  console.log(text);
+
+  const ConformHandler = async () => {
+    setLoading(true);
+    try {
+      if (image) {
+        const formData = new FormData();
+        formData.append('file', {
+          uri: image, // Corrected URI
+          type: 'image/jpeg',
+          name: 'photo.jpg',
+        });
+
+        const response = await axios.post(API + 'upload-selfie', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        if (response) {
+          navigation.navigate('Homes');
+        } else {
+          setMessage('Network Error');
+        }
+      } else {
+        setMessage('No photo captured');
+        clearMessage();
+      }
+    } catch (error) {
+      console.error(error);
+      if (error.response) {
+        console.error('Backend Error:', error.response.data.error);
+        // Handle backend error
+        setMessage(error.response.data.error);
+        clearMessage();
+      } else if (error.request) {
+        console.error('Request Error:', error.request);
+        // Handle request error
+        setMessage('Request error occurred');
+        clearMessage();
+      } else {
+        console.error('Unknown Error:', error.message);
+        // Handle other errors
+        setMessage('Unknown error occurred');
+        clearMessage();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <View style={{flex: 1}}>
       <View style={styles.headerContainer}>
@@ -108,21 +144,42 @@ const SelfieScreen = () => {
       </View>
 
       {image ? (
-        <View style={{alignItems: 'center', marginTop: 25}}>
+        <View style={{alignItems: 'center', marginTop: 20, elevation: 10}}>
           <Image
             source={{uri: image}}
-            style={{width: '65%', height: 300, borderRadius: 20}}
+            style={{
+              width: '65%',
+              height: 300,
+              borderRadius: 20,
+              transform: [{rotate: '90deg'}],
+            }}
           />
         </View>
       ) : (
-        renderCamera()
+        <>
+          {renderCamera()}
+          <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
+            <Text style={{fontWeight: 700, fontSize: 20, color: colors.white}}>
+              Take one Selfie
+            </Text>
+          </TouchableOpacity>
+        </>
       )}
 
       {image && (
-        <View>
-          <TouchableOpacity style={styles.btnContainer} onPress={() => {}}>
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity
+            style={styles.btnContainer}
+            onPress={ConformHandler}>
             <Text style={styles.btnTxt}>Conform</Text>
           </TouchableOpacity>
+          {loading && (
+            <View
+              style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+              <ActivityIndicator size="large" color={colors.buttons} />
+              <Text>uploading . . . </Text>
+            </View>
+          )}
           <TouchableOpacity
             style={[styles.btnContainer, {backgroundColor: colors.orange}]}
             onPress={() => {
@@ -158,8 +215,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  buttonsContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   btnContainer: {
-    width: '99%',
+    width: '98%',
     backgroundColor: colors.buttons,
     paddingVertical: 10,
     justifyContent: 'center',

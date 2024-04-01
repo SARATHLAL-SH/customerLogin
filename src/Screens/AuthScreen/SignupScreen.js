@@ -9,14 +9,13 @@ import {
   ScrollView,
 } from 'react-native';
 import React, {useContext, useState} from 'react';
-import Header from '../../Components/Header';
+
 import champagner from '../../../Assets/Images/champagner.jpg';
 import {colors} from '../../Globals/Styles';
 import LoginContext from '../../Contexts/LoginBtnContext';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {API} from '../../utils/apiutils';
-import App from '../../../App';
 
 const SignupScreen = () => {
   const [email, setEmial] = useState();
@@ -40,7 +39,7 @@ const SignupScreen = () => {
       });
       console.log(response.data);
       if (response.data) {
-        Navigation.navigate('homeScreen');
+        Navigation.navigate('verifyStack', {resetStack: true});
         setMessage(response.data.message);
       } else {
         setMessage(response.data.error);
@@ -57,9 +56,12 @@ const SignupScreen = () => {
         <View style={[styles.signupHeaderContainer]}>
           <ImageBackground
             source={champagner}
-            style={[styles.imagebackground, {resizeMode: 'contian',opacity:0.3}]}>
+            style={[
+              styles.imagebackground,
+              {resizeMode: 'contian', opacity: 0.3},
+            ]}>
             <View>
-              <Text style={[styles.commonText, styles.sigunuphead,]}>
+              <Text style={[styles.commonText, styles.sigunuphead]}>
                 SIGN UP
               </Text>
               <Text style={styles.commonText}>
@@ -107,7 +109,7 @@ const SignupScreen = () => {
           <View style={styles.btnwraper}>
             <TouchableOpacity
               style={[styles.loginBtnContainer]}
-              disabled={!(emailRegex.test(email) && username?.length > 3)}
+              disabled={!(emailRegex.test(email) && username?.length > 2)}
               onPress={SignupHandler}>
               <Text style={styles.btnText}>{`${
                 emailRegex.test(email)
@@ -143,7 +145,6 @@ const styles = StyleSheet.create({
   },
   commonText: {
     color: colors.white,
-  
   },
   sigunuphead: {
     fontSize: 22,

@@ -1,4 +1,4 @@
-export const VerifyPancardHandler = (text, setMessage, setError, setAge) => {
+export const VerifyPancardHandler = (text, setMessage, setError, setAge,Navigation) => {
   const panRegex = /Account Number Card\s*([\w\d]{10})/;
   const dobRegex = /Date of Birth\s*(\d{2}\/\d{2}\/\d{4})/;
 
@@ -44,6 +44,7 @@ export const VerifyPancardHandler = (text, setMessage, setError, setAge) => {
       if (age > 21) {
         setMessage('PanCard Uploaded Successfully');
         console.log('successfully updated')
+        Navigation.navigate('Homes')
       } else if (age < 21) {
         setMessage('You are not Eligible for Signin this Application');
       } else {

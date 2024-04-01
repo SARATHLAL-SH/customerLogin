@@ -22,7 +22,7 @@ const LoginModal = ({closeModal}) => {
 
   const LoginHandler = async () => {
     closeModal();
-    
+
     try {
       const otpResponce = await axios.post(API + 'send-otp', {mobileNumber});
       Navigation.navigate('verifyScreen');

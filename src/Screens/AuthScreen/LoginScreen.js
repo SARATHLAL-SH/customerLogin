@@ -26,7 +26,7 @@ const LoginScreen = () => {
   const modalToggleHandler = () => {
     setModalVisible(!modalVisible);
   };
-  const Navigate =useNavigation();
+  
   return (
     <>
       {/* <Header title="Login" name="arrow-left" /> */}

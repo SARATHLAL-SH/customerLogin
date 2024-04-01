@@ -1,4 +1,7 @@
 import {launchCamera} from 'react-native-image-picker';
+import axios from 'axios';
+import {API} from '../apiutils';
+
 
 export const openCamera = async (
   setImage,
@@ -33,7 +36,7 @@ export const openCamera = async (
 export const findAge = (
   text,
   setAge,
-  aadhaarNumber,
+  aadharNumber,
   setIsFrontUploaded,
   setImage,
   setMessage,
@@ -71,10 +74,10 @@ export const findAge = (
     const age = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365.25));
     setAge(age);
 
-    console.log('Your age is:', age);
+    // console.log('Your age is:', age);
     validateFront_Aadhar_Handler(
       age,
-      aadhaarNumber,
+      aadharNumber,
       setIsFrontUploaded,
       setImage,
       setMessage,
@@ -91,6 +94,7 @@ export const findAge = (
     return; // Exit function if DOB is not found
   }
 };
+
 export const extractAadhaarDetails = async (
   text,
   setIsFrontUploaded,
@@ -102,6 +106,7 @@ export const extractAadhaarDetails = async (
   setMessage,
   setImageHandler,
   setError,
+  setD_O_Birth,
 ) => {
   try {
     const aadhaarRegex = /\b\d{4}\s\d{4}\s\d{4}\b/g;
@@ -109,24 +114,27 @@ export const extractAadhaarDetails = async (
     const dobRegex = /DOB: (\d{2}\/\d{2}\/\d{4})/;
 
     // Extract Aadhaar number, issue date, and date of birth using regex
-    const aadhaarNumber = (await text?.match(aadhaarRegex)?.[0]) ?? '';
+    const aadharNumber = (await text?.match(aadhaarRegex)?.[0]) ?? '';
     const issueDate = text?.match(issueDateRegex)?.[1] ?? '';
     const dob = text?.match(dobRegex)?.[1] ?? '';
-    console.log('aadhar', aadhaarNumber, 'issueDate', issueDate, 'dob:', dob);
-    setFrontAadhar(aadhaarNumber);
+    console.log('aadhar', aadharNumber, 'issueDate', issueDate, 'dob:', dob);
+    setFrontAadhar(aadharNumber);
+    setD_O_Birth(dob);
 
     findAge(
       text,
       setAge,
-      aadhaarNumber,
+      aadharNumber,
       setIsFrontUploaded,
       setImage,
       setMessage,
       setImageHandler,
       setError,
+      setD_O_Birth,
+      
     );
 
-    return {aadhaarNumber, issueDate, dob};
+    return {aadharNumber, issueDate, dob};
   } catch (error) {
     console.log(error);
     setMessage('Unable to Extract your Details, Try after Some Time');
@@ -137,26 +145,26 @@ export const extractAadhaarDetails = async (
 
 const validateFront_Aadhar_Handler = (
   age,
-  aadhaarNumber,
+  aadharNumber,
   setIsFrontUploaded,
   setImage,
   setMessage,
   setImageHandler,
   setError,
 ) => {
-  if (aadhaarNumber.replace(/\s/g, '').length === 12 && age > 21) {
+  if (aadharNumber.replace(/\s/g, '').length === 12 && age > 21) {
     setIsFrontUploaded(true);
     setMessage('Successfully uploaded');
     setError(false);
     setImageHandler();
     // clearMessageHandler();
-  } else if (aadhaarNumber.replace(/\s/g, '').length === 12 && age < 21) {
+  } else if (aadharNumber.replace(/\s/g, '').length === 12 && age < 21) {
     setMessage(
       'As per Govt Records you are not Eligible for Signin this Application',
       setError(true),
     );
     setImageHandler();
-  } else if (aadhaarNumber.replace(/\s/g, '').length != 12 && age > 21) {
+  } else if (aadharNumber.replace(/\s/g, '').length != 12 && age > 21) {
     setMessage('AdhaarCard validation Failed, Please Try Again');
     setError(true);
     setImageHandler();
@@ -175,25 +183,27 @@ export const extractAadhaarDetailsBack = async (
   setImage,
   setImageHandler,
   setError,
+  D_O_Birth,
+  age,Navigation
 ) => {
   try {
     const aadhaarRegex = /\b(?<!\d)(?!1947)\d{4}\s\d{4}\s\d{4}\b/;
     const addressRegex = /Address:([\s\S]*?)(?=\d{4}\s\d{4}\s\d{4}\b|$)/;
     // const addressRegex = /Address:([\s\S]*?)(?=[A-Z]|Unique)/g;
-    const aadhaarNumber = (await text?.match(aadhaarRegex)?.[0]) ?? '';
+    const aadharNumber = (await text?.match(aadhaarRegex)?.[0]) ?? '';
     const addressMatch = addressRegex.exec(text);
     const address = addressMatch ? addressMatch[1].trim() : '';
     console.log(
       'aadhar in console:\n',
-      aadhaarNumber,
+      aadharNumber,
       'address in console:\n',
       address,
     );
 
     {
-      if (address && aadhaarNumber)
+      if (address && aadharNumber)
         validateBack_Aadhar_Handler(
-          aadhaarNumber,
+          aadharNumber,
           address,
           setIsFrontUploaded,
           frontaadhar,
@@ -203,20 +213,23 @@ export const extractAadhaarDetailsBack = async (
           setImage,
           setImageHandler,
           setError,
+          D_O_Birth,
+          age,
+          Navigation
         );
       else setMessage('unable to validate aadhaar, Try Again..');
       setError(true);
     }
 
-    return {aadhaarNumber, address};
+    return {aadharNumber, address};
   } catch (error) {
     console.log(error);
     setMessage('capture Aadhaar Card Back Side');
     // setImageHandler();
   }
 };
-const validateBack_Aadhar_Handler = (
-  aadhaarNumber,
+const validateBack_Aadhar_Handler = async (
+  aadharNumber,
   address,
   setIsFrontUploaded,
   frontaadhar,
@@ -226,27 +239,44 @@ const validateBack_Aadhar_Handler = (
   setImage,
   setImageHandler,
   setError,
+  D_O_Birth,
+  age,Navigation
 ) => {
   if (
-    aadhaarNumber?.replace(/\s/g, '') === frontaadhar?.replace(/\s/g, '') &&
+    aadharNumber?.replace(/\s/g, '') === frontaadhar?.replace(/\s/g, '') &&
     address?.length > 15
   ) {
-    setBackAadhar(aadhaarNumber);
-    setAadhaarAddress(address);
-    setIsFrontUploaded(false);
-    setMessage('Successfully Uploaded Adhaar Card');
-
-    setImageHandler();
-    return;
+    try {
+      const response = await axios.post(API + 'post-aadhar-details', {
+        D_O_Birth,
+        address,
+        aadharNumber,
+        age
+      });
+      if (response.data) {
+        console.log(response.data);
+        setBackAadhar(aadharNumber);
+        setAadhaarAddress(address);
+        setIsFrontUploaded(false);
+        setMessage('Successfully Uploaded Adhaar Card');
+    
+        setImageHandler();
+        Navigation.navigate('Take Selfie')
+        return;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+   
   } else if (
-    aadhaarNumber?.replace(/\s/g, '') != frontaadhar?.replace(/\s/g, '') &&
+    aadharNumber?.replace(/\s/g, '') != frontaadhar?.replace(/\s/g, '') &&
     address?.length > 15
   ) {
     setMessage('Your Aadhaar Card details not matching. Try Again');
     setError(true);
     // setImageHandler();
   } else if (
-    aadhaarNumber?.replace(/\s/g, '') != frontaadhar?.replace(/\s/g, '') &&
+    aadharNumber?.replace(/\s/g, '') != frontaadhar?.replace(/\s/g, '') &&
     address?.length < 5
   ) {
     setMessage('Unable to read your Address Details');
