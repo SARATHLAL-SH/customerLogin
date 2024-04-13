@@ -8,7 +8,7 @@ export const LoginBtnContext = ({children}) => {
   const [isPanCard, setIsPanCard] = useState(false);
   const [loginToken, setLoginToken] = useState('');
   const [getUserData, setGetUserData] = useState();
-
+  const[status,setStatus] = useState();
   return (
     <LoginContext.Provider
       value={{
@@ -22,6 +22,7 @@ export const LoginBtnContext = ({children}) => {
         setLoginToken,
         getUserData,
         setGetUserData,
+        status,setStatus
       }}>
       {children}
     </LoginContext.Provider>

@@ -24,6 +24,7 @@ const SelfieScreen = () => {
   const camera = useRef(null);
   const device = getCameraDevice(devices, 'front');
   const [image, setImage] = useState();
+  const[images,setImages] = useState("");
   const [text, setText] = useState();
   const [message, setMessage] = useState();
   const [faces, setFaces] = useState([]);
@@ -51,17 +52,63 @@ const SelfieScreen = () => {
     }
   };
   const takePicture = async () => {
-    if (camera != null) {
-      const photo = await camera.current.takePhoto();
-      // uploadSelfieHandler(photo);
-      setImage('file://' + photo.path);
-    } else {
-      setMessage('Image not Available');
-      clearMessage();
-    }
-  };
+    try{
+      if (camera != null) {
+        const photo = await camera.current.takePhoto();
+        setImage('file://' + photo.path);
+       
+       const imageparts = photo.path.split('/')
+       const imageName = imageparts[imageparts.length - 1];
+       
+          const formData = new FormData();
+          formData.append('file', {
+            uri: 'file://' + photo.path, // Corrected URI
+            type: 'image/jpeg',
+            name: 'photo.jpg',
+          });
+  
+          const response = await axios.post(API + 'upload-selfie', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          if (response) {
+            // navigation.navigate('Homes');
+            console.log("response after updeate",response.data.filename)
+            setImages(response.data.filename)
+          } else {
+            setMessage('Network Error');
+          }
+       
 
-  console.log('image path', image);
+      } else {
+        setMessage('Image not Available');
+        clearMessage();
+      }
+    } catch(error){
+      console.log(error)
+      if (error.response) {
+        console.error('Backend Error:', error.response.data.error);
+        // Handle backend error
+        setMessage(error.response.data.error);
+        clearMessage();
+      } else if (error.request) {
+        console.error('Request Error from Conform Handler:', error.request);
+        // Handle request error
+        setMessage('please wait some times..');
+        clearMessage();
+      } else {
+        console.error('Unknown Error:', error.message);
+        // Handle other errors
+        setMessage('Check your internet connectivity');
+        clearMessage();
+      }
+    } finally {
+      setLoading(false);
+    }
+    };
+
+ 
   const renderCamera = () => {
     if (!device) {
       return (
@@ -88,25 +135,19 @@ const SelfieScreen = () => {
   const ConformHandler = async () => {
     setLoading(true);
     try {
-      if (image) {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: image, // Corrected URI
-          type: 'image/jpeg',
-          name: 'photo.jpg',
-        });
-
-        const response = await axios.post(API + 'upload-selfie', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+      console.log("imagesss path",images)
+      if (images) {
+      const   formData ={"images":image}
+      const response = await axios.post(API + 'create-selfie', {...formData});
         if (response) {
+          
           navigation.navigate('Homes');
         } else {
           setMessage('Network Error');
         }
       } else {
+        const formData = new FormData();
+        formData.append('images', []);  
         setMessage('No photo captured');
         clearMessage();
       }
@@ -118,14 +159,14 @@ const SelfieScreen = () => {
         setMessage(error.response.data.error);
         clearMessage();
       } else if (error.request) {
-        console.error('Request Error:', error.request);
+        console.error('Request Error from Conform Handler:', error.request);
         // Handle request error
-        setMessage('Request error occurred');
+        setMessage('please wait some times..');
         clearMessage();
       } else {
         console.error('Unknown Error:', error.message);
         // Handle other errors
-        setMessage('Unknown error occurred');
+        setMessage('Check your internet connectivity');
         clearMessage();
       }
     } finally {

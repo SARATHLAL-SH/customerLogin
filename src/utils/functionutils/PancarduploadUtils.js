@@ -44,7 +44,7 @@ export const VerifyPancardHandler = (text, setMessage, setError, setAge,Navigati
       if (age > 21) {
         setMessage('PanCard Uploaded Successfully');
         console.log('successfully updated')
-        Navigation.navigate('Homes')
+        Navigation.navigate('Take Selfie')
       } else if (age < 21) {
         setMessage('You are not Eligible for Signin this Application');
       } else {

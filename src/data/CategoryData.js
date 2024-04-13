@@ -9,7 +9,7 @@ const CategoryData = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(API + 'categories');
+        const response = await axios.get(API + 'get-all-categories');
         if (response) {
           setCategoryData(response.data);
         } else {

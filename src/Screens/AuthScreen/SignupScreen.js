@@ -39,7 +39,10 @@ const SignupScreen = () => {
       });
       console.log(response.data);
       if (response.data) {
-        Navigation.navigate('verifyStack', {resetStack: true});
+        Navigation.reset({
+          index: 0,
+          routes: [{ name: 'Verify Documents' }],
+        });
         setMessage(response.data.message);
       } else {
         setMessage(response.data.error);

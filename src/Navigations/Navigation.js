@@ -19,13 +19,14 @@ import Cheers from '../Screens/UserScreens/Cheers';
 import SearchBar from '../Components/SearchBar';
 import LoginContext from '../Contexts/LoginBtnContext';
 import {fetchToken} from '../utils/navigationutils';
-import AuthContext from '../Contexts/NavigationContext';
-import {createDrawerNavigator} from '@react-navigation/drawer';
+import { GetStatus } from '../data';
 
 export const Navigation = () => {
   const [isToken, setIsToken] = useState(null);
   // const Drawer = createDrawerNavigator();
   const Stack = createNativeStackNavigator();
+  const VerifyStack = createNativeStackNavigator();
+  // const {status} = GetStatus();
 
   useEffect(() => {
     const checkToken = async () => {
@@ -41,21 +42,23 @@ export const Navigation = () => {
         console.error('Error checking token:', error);
       }
     };
+   
     checkToken();
   }, [fetchToken]);
 
-  const VerifyStack = () => (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}>
-      <Stack.Screen name="homeScreen" component={HomeVerification} />
-      <Stack.Screen name="selectID" component={SelectIDScreen} />
-      <Stack.Screen name="Upload Aadhaar" component={DocumentUploader} />
-      <Stack.Screen name="Upload PanCard" component={ScannerCamera} />
-      <Stack.Screen name="Take Selfie" component={SelfieScreen} />
-    </Stack.Navigator>
-  );
+  const VerifyStackScreen = () => { return( <VerifyStack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}>
+    <VerifyStack.Screen name="homeScreen" component={HomeVerification} />
+    <VerifyStack.Screen name="selectID" component={SelectIDScreen} />
+    <VerifyStack.Screen name="Upload Aadhaar" component={DocumentUploader} />
+    <VerifyStack.Screen name="Upload PanCard" component={ScannerCamera} />
+    <VerifyStack.Screen name="Take Selfie" component={SelfieScreen} />
+  </VerifyStack.Navigator>)}
+   
+   
+ 
 
   const HomeStack = () => (
     <Stack.Navigator
@@ -90,7 +93,8 @@ export const Navigation = () => {
           <Stack.Screen name="Homes" component={HomeStack} />
           <Stack.Screen name="signup" component={SignupScreen} />
           <Stack.Screen name="verifyScreen" component={VerifyScreen} />
-          <Stack.Screen name="verifyStack" component={VerifyStack} />
+          <Stack.Screen name="Verify Documents" component={VerifyStackScreen}  />
+           
         </Stack.Navigator>
       </NavigationContainer>
     </LoginBtnContext>

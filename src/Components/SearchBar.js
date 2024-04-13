@@ -25,15 +25,7 @@ const SearchBar = () => {
   const [inputValue, setInputValue] = useState();
   const [filterdata, setFilterData] = useState([]);
   const Navigation = useNavigation();
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          Network Error. Please try again later.
-        </Text>
-      </View>
-    );
-  }
+console.log("errir:," , error)
   useEffect(() => {
     if (!inputValue) {
       setFilterData(categoryData);
@@ -45,15 +37,27 @@ const SearchBar = () => {
     }
   }, [inputValue, categoryData]);
 
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          
+          Network Error. Please try again later.
+        </Text>
+      </View>
+    );
+  }
+
   const renderItem = ({item}) => (
-    <View>
-      {console.log(item)}
+    <View style={styles.categoryContainer}>
+      {/* {console.log(item)} */}
+      <Text style={{color:"black", marginTop:20,fontWeight:"700",fontSize:22}}>   {item.name}</Text>
       <Image
-        source={{uri: 'http://192.168.0.114:2020/get/image/' + item.image}}
+        source={{uri: 'http://192.168.0.114:2020/get/image/' + item.image} } 
         style={styles.image}
       />
-      <Text>{IMAGE_URL + item.image}</Text>
-      <Text>{item.description}</Text>
+    
+      <Text style={{color:"black"}}>{item.description}</Text>
     </View>
   );
   const signoutHandler = async () => {
@@ -134,7 +138,8 @@ const styles = StyleSheet.create({
   image: {
     width: 200,
     height: 200,
-    resizeMode: 'contain',
+    resizeMode: 'cover',
+    margin:5
   },
   errorContainer: {
     flex: 1,
@@ -145,4 +150,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'red',
   },
+  categoryContainer:{
+    // flexDirection:'row',
+    // justifyContent:'center',
+    alignItems:'center'
+  }
 });

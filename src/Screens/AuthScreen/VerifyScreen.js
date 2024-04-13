@@ -20,21 +20,22 @@ import {storeToken} from '../../utils/navigationutils';
 import LoginContext from '../../Contexts/LoginBtnContext';
 import AuthContext from '../../Contexts/NavigationContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { GetUserByMobile } from '../../data';
+import useGetStatus from '../../data/GetStatus';
 
 const VerifyScreen = () => {
   const firstInput = useRef();
   const secondInput = useRef();
   const thirdInput = useRef();
   const fourthInput = useRef();
-  const {mobileNumber, loginToken, setLoginToken} = useContext(LoginContext);
+  const {mobileNumber, loginToken, setLoginToken,} = useContext(LoginContext);
   const [error, setError] = useState('');
   const [otps, setOtp] = useState({1: '', 2: '', 3: '', 4: ''});
   const [showResendOTP, setShowResendOTP] = useState(false);
   const Navigation = useNavigation();
   const [mobileUserData, setMobileUserData] = useState();
-  // const {getUserData} = GetUserByMobile();
-  // console.log('getuserMobile',getUserData)
+  const status = useGetStatus(mobileNumber);
+  
+ 
   let token = '';
   const otpLength = Object.values(otps).filter(value => value !== '').length;
   const resendOtpTextHandler = () => {
@@ -55,10 +56,11 @@ const VerifyScreen = () => {
     setError('OTP successfully Resent to your Mobile Number');
     setTimeout(() => {
       setError('');
+      resendOtpTextHandler();
     }, 3000);
   };
   const siginButtonHandler = async () => {
-    resendOtpTextHandler();
+  
 
     try {
       const otp = Object.values(otps).join('');
@@ -67,15 +69,20 @@ const VerifyScreen = () => {
         mobileNumber,
       });
       token = otpResponce.data.accessToken;
-      // console.log('token', mobileUserData);
-      if (!mobileUserData) {
-        Navigation.navigate('signup');
-        console.log('no mobileuserdata');
-      } else {
+    //  console.log("statusofStatus", status.status)
+      if (mobileUserData) {
+       
+       
+        Navigation.navigate('Homes');
+      }else if(mobileUserData ) {
+        Navigation.navigate('Verify Documents');
+      }
+      else {
         await AsyncStorage.setItem('token', token);
         // await AsyncStorage.removeItem('token');
-        console.log('usermobileData is availbale');
-        Navigation.navigate('Homes');
+        Navigation.navigate('signup');
+        console.log('no mobileuserdata',mobileUserData);
+        
       }
 
       setError('Successfully Logged In');
@@ -94,7 +101,7 @@ const VerifyScreen = () => {
       setError('');
     }, 3000);
   };
-  console.log('LoginToken', loginToken);
+  // console.log('LoginToken', loginToken);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -102,21 +109,39 @@ const VerifyScreen = () => {
           API + 'get-register-user/' + mobileNumber,
         );
         if (response) {
-          setMobileUserData(response.data);
+          // const parsedUserDetails = JSON.parse(response.data);
+          const user = await response.data.users[0]?.username;
+          console.log("user",user)
+          setMobileUserData(user);
         } else {
           setMobileUserData(null);
         }
       } catch (error) {
         console.log(error);
       }
-      const checkStatus = await axios.get(API + 'get-all-selfie');
-      if (checkStatus.data) {
-        console.log(checkStatus.data);
-      }
+      
     };
+    // const getStatus = async()=>{
+    //   try{
+    //   const status = await  axios.get(API + 'get-mobile-status/'+ mobileNumber)
+    //     if (status) {
+    //       console.log("getStatus",status.data);
+    //       setStatus(status.data.status)
+    //     }
+    //     else{
+    //       setStatus(null);
+    //       console.log("getStatus data not available");
+    //     }
+    //   }catch(error){
+    //     console.log("error from getStatus", error)
+    //   }
+    
+    // } 
+   
     fetchData();
+    // getStatus();
   }, [mobileNumber]);
-
+// console.log(status)
   return (
     <ScrollView style={styles.container}>
       {/* <Header title="VERIFY DETAILS" type="arrow-left" /> */}

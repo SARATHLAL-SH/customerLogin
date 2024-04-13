@@ -5,6 +5,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Linking,
   Image,
   Dimensions,
   ActivityIndicator,
@@ -29,7 +30,6 @@ import {API} from '../../utils/apiutils';
 import axios from 'axios';
 import {useNavigation} from '@react-navigation/native';
 
-
 const DocumentUploader = () => {
   const [image, setImage] = useState('');
   const [text, setText] = useState();
@@ -48,12 +48,13 @@ const DocumentUploader = () => {
   const Navigation = useNavigation();
 
   useEffect(() => {
+    requestCameraPermission;
+  }, []);
+  useEffect(() => {
     recognizeText(image, setText, setMessage, setError);
   }, [image]);
 
-  useEffect(() => {
-    requestCameraPermission;
-  }, []);
+
   const setImageHandler = () => {
     setTimeout(() => {
       setImage('');
@@ -125,8 +126,13 @@ const DocumentUploader = () => {
   const renderCamera = () => {
     if (!device) {
       return (
-        <View style={{backgroundColor: 'red'}}>
-          <Text>Camera not opening</Text>
+        <View
+          style={{
+            backgroundColor: 'red',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Text style={{color: colors.white}}>No Camera Found</Text>
         </View>
       );
     } else {
@@ -185,7 +191,7 @@ const DocumentUploader = () => {
                   setError,
                   D_O_Birth,
                   age,
-                  Navigation
+                  Navigation,
                 )
               : extractAadhaarDetails(
                   text,
@@ -202,7 +208,7 @@ const DocumentUploader = () => {
                   D_O_Birth,
                 )
           }>
-          { image && <Text style={styles.confirmtxt}>Conform</Text>}
+          {image && <Text style={styles.confirmtxt}>Conform</Text>}
         </TouchableOpacity>
 
         {image && (
